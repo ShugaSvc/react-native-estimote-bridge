@@ -6,7 +6,11 @@ const { RNEstimote } = NativeModules;
 const Estimote = {
 	addEventListener: function(callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEvent', (data) => {
-            console.log(`estimote returned data`);
+            let beaconCode = data.beaconCode;
+            if (codeHeardQueue.shouldCodeInvokeCallback(beaconCode)) {
+                callback(data);
+            }
+            codeHeardQueue.heardCode(beaconCode);
         });
 	},
 
