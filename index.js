@@ -26,6 +26,10 @@ const Estimote = {
     stop: function() {
         RNEstimote.stop();
     },
+
+    setBeaconDevices: function(beaconDevices) {
+        RNEstimote.setBeaconDevices(beaconDevices);
+    },
 };
 
 export default Estimote;
