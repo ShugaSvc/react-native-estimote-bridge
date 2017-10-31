@@ -10,9 +10,13 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableNativeArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class RNEstimoteModule extends ReactContextBaseJavaModule {
@@ -20,6 +24,7 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
 
     private final ReactApplicationContext reactContext;
     private BeaconManager beaconManager;
+    private LinkedList<String> allowedBeaconDevices = new LinkedList<>();
 
     public RNEstimoteModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -45,9 +50,12 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
             public void onLocationsFound(List<EstimoteLocation> beacons) {
                 RCTNativeAppEventEmitter eventEmitter = reactContext.getJSModule(RCTNativeAppEventEmitter.class);
                 for (EstimoteLocation beacon : beacons) {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("beaconCode", beacon.id.toHexString());
-                    eventEmitter.emit(EMITTED_EVENT_NAME, map);
+                    String beaconId = beacon.id.toHexString();
+                    if (allowedBeaconDevices.indexOf(beaconId) > -1) {
+                        WritableMap map = Arguments.createMap();
+                        map.putString("beaconCode", beacon.id.toHexString());
+                        eventEmitter.emit(EMITTED_EVENT_NAME, map);
+                    }
                 }
             }
         });
@@ -56,6 +64,13 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void stop() {
 
+    }
+
+    @ReactMethod
+    public void setBeaconDevices(ReadableArray beacons) {
+        ArrayList allowedBeacons = beacons.toArrayList();
+        allowedBeaconDevices = new LinkedList<>();
+        allowedBeaconDevices.addAll(allowedBeacons);
     }
 
     @Override
