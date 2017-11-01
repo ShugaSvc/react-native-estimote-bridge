@@ -63,7 +63,7 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void stop() {
-
+        beaconManager.stopLocationDiscovery();
     }
 
     @ReactMethod
