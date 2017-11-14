@@ -48,6 +48,13 @@ class CodeHeardQueue {
             timeHeard: new Date(),
         });
     }
+
+    /**
+     * @param ttl - time to live in ms
+     */
+    setTimeToLive = (ttl) => {
+        this._timeToLive = ttl;
+    }
 }
 
 const codeHeardQueue = new CodeHeardQueue();
