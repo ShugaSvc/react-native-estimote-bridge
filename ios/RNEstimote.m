@@ -1,5 +1,6 @@
 
 #import "RNEstimote.h"
+#import "BGEstimoteManager.h"
 
 @implementation RNEstimote
 
@@ -32,6 +33,7 @@ RCT_EXPORT_METHOD(start:(NSString *)appId withAppToken: (NSString *) appToken) {
 }
 
 RCT_EXPORT_METHOD(stop) {
+    [[BGEstimoteManager sharedInstance] resume]; //Resume background monitoring
     [self.monitoringManager stopMonitoring];
 }
 
@@ -53,6 +55,7 @@ RCT_EXPORT_METHOD(setBeaconDevices:(NSArray *)beaconDevices) {
 }
 
 - (void)startMonitorDevice {
+    [[BGEstimoteManager sharedInstance] pause]; //Pause background monitoring
     [self.monitoringManager startMonitoringForIdentifiers:self.devices];
 }
 
