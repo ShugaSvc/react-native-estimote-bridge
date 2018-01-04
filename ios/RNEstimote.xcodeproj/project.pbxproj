@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA8AD85F1FD003290070DFE9 /* BGEstimoteManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8AD85E1FD003290070DFE9 /* BGEstimoteManager.m */; };
 		AAEAC05A1FA71190008B0B6F /* EstimoteSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAEAC0591FA7115A008B0B6F /* EstimoteSDK.framework */; };
 		AAEAC05C1FA711C5008B0B6F /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAEAC05B1FA711C5008B0B6F /* CoreLocation.framework */; };
 		AAEAC05E1FA711D0008B0B6F /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAEAC05D1FA711D0008B0B6F /* CoreBluetooth.framework */; };
@@ -29,8 +28,6 @@
 
 /* Begin PBXFileReference section */
 		134814201AA4EA6300B7C361 /* libRNEstimote.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNEstimote.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA8AD85D1FD003280070DFE9 /* BGEstimoteManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BGEstimoteManager.h; sourceTree = "<group>"; };
-		AA8AD85E1FD003290070DFE9 /* BGEstimoteManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BGEstimoteManager.m; sourceTree = "<group>"; };
 		AAEAC0591FA7115A008B0B6F /* EstimoteSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = EstimoteSDK.framework; sourceTree = "<group>"; };
 		AAEAC05B1FA711C5008B0B6F /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		AAEAC05D1FA711D0008B0B6F /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
@@ -68,8 +65,6 @@
 				AAEAC0581FA7115A008B0B6F /* Frameworks */,
 				B3E7B5881CC2AC0600A0062D /* RNEstimote.h */,
 				B3E7B5891CC2AC0600A0062D /* RNEstimote.m */,
-				AA8AD85D1FD003280070DFE9 /* BGEstimoteManager.h */,
-				AA8AD85E1FD003290070DFE9 /* BGEstimoteManager.m */,
 				134814211AA4EA7D00B7C361 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -141,7 +136,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA8AD85F1FD003290070DFE9 /* BGEstimoteManager.m in Sources */,
 				B3E7B58A1CC2AC0600A0062D /* RNEstimote.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
