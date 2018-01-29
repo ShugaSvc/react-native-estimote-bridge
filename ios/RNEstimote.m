@@ -5,7 +5,7 @@
 
 - (id)init {
     self = [super init];
-    self.detectionDistance = 10.0; //Default detection distance, in case we needed to change it from js someday
+    self.detectionDistance = 3.0; //Default detection distance, in case we needed to change it from js someday
     return self;
 }
 

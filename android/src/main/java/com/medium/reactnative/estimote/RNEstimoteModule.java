@@ -11,7 +11,6 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.ReadableNativeArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
@@ -25,6 +24,7 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
     private BeaconManager beaconManager;
     private LinkedList<String> allowedBeaconDevices = new LinkedList<>();
+    private double detectionDistance = 3.0;
 
     public RNEstimoteModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -39,26 +39,41 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
         beaconManager = new BeaconManager(context);
 
         beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
-            @Override public void onServiceReady() {
+            @Override
+            public void onServiceReady() {
                 beaconManager.startLocationDiscovery();
             }
         });
 
         //- location listener
         beaconManager.setLocationListener(new BeaconManager.LocationListener() {
+            private double detectionDistance;
+
+            public BeaconManager.LocationListener setDetectionDistance(double detectionDistance) {
+                this.detectionDistance = detectionDistance;
+                return this;
+            }
+
+            private Boolean isWithinDetectionDistance(double rssi, double txPower, String id) {
+                return Math.pow(10, (txPower - rssi) / 20) <= this.detectionDistance;
+            }
+
             @Override
             public void onLocationsFound(List<EstimoteLocation> beacons) {
                 RCTNativeAppEventEmitter eventEmitter = reactContext.getJSModule(RCTNativeAppEventEmitter.class);
                 for (EstimoteLocation beacon : beacons) {
                     String beaconId = beacon.id.toHexString();
                     if (allowedBeaconDevices.indexOf(beaconId) > -1) {
-                        WritableMap map = Arguments.createMap();
-                        map.putString("beaconCode", beacon.id.toHexString());
-                        eventEmitter.emit(EMITTED_EVENT_NAME, map);
+                        Boolean isWithinDetectionDistance = this.isWithinDetectionDistance(beacon.rssi, beacon.txPower, beaconId);
+                        if (isWithinDetectionDistance) {
+                            WritableMap map = Arguments.createMap();
+                            map.putString("beaconCode", beacon.id.toHexString());
+                            eventEmitter.emit(EMITTED_EVENT_NAME, map);
+                        }
                     }
                 }
             }
-        });
+        }.setDetectionDistance(this.detectionDistance));
     }
 
     @ReactMethod
@@ -71,6 +86,11 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
         ArrayList allowedBeacons = beacons.toArrayList();
         allowedBeaconDevices = new LinkedList<>();
         allowedBeaconDevices.addAll(allowedBeacons);
+    }
+
+    @ReactMethod
+    public void setBeaconDetectionDistance(double detectionDistance) {
+        this.detectionDistance = detectionDistance;
     }
 
     @Override
