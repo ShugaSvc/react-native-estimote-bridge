@@ -24,7 +24,7 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
     private BeaconManager beaconManager;
     private LinkedList<String> allowedBeaconDevices = new LinkedList<>();
-    private double detectionDistance = 3.0;
+    private double detectionDistance = 6.0;
 
     public RNEstimoteModule(ReactApplicationContext reactContext) {
         super(reactContext);
