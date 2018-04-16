@@ -5,7 +5,6 @@
 
 - (id)init {
     self = [super init];
-    self.detectionDistance = 10.0; //Default detection distance, in case we needed to change it from js someday
     return self;
 }
 
@@ -15,67 +14,56 @@
 }
 RCT_EXPORT_MODULE()
 
-RCT_EXPORT_METHOD(setBeaconDetectionDistance:(NSNumber *)distance) {
-    self.detectionDistance = distance.floatValue;
-}
-
-RCT_EXPORT_METHOD(start:(NSString *)appId withAppToken: (NSString *) appToken) {
-    [ESTConfig setupAppID:appId andAppToken:appToken];
-    
-    self.monitoringManager = [[ESTMonitoringV2Manager alloc]
-                              initWithDesiredMeanTriggerDistance:self.detectionDistance
-                              delegate:self];
-    
-    if (self.devices.count > 0) { //devices had been set
-        [self startMonitorDevice];
-    }
-}
-
 RCT_EXPORT_METHOD(stop) {
-    [self.monitoringManager stopMonitoring];
+    [self.proximityObserver stopObservingZones];
+    self.proximityObserver = nil;
 }
 
-RCT_EXPORT_METHOD(setBeaconDevices:(NSArray *)beaconDevices) {
-    [self setDevices:beaconDevices];
-    
-    if (self.monitoringManager != nil) { //: is initialized
-        [self stop];
-        [self startMonitorDevice];
+RCT_EXPORT_METHOD(start:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) beaconZones withAttachmentKey: (NSString *) attachmentKey) {
+    EPXCloudCredentials *cloudCredentials =
+    [[EPXCloudCredentials alloc] initWithAppID:appId
+                                      appToken:appToken];
+
+    self.proximityObserver = [[EPXProximityObserver alloc]
+                              initWithCredentials:cloudCredentials
+                              errorBlock:^(NSError * _Nonnull error) {
+                                  RCTLogWarn(@"proximity observer error = %@", error);
+                              }];
+
+    NSMutableArray * _zones = [[NSMutableArray alloc] init];
+
+    for (id zone in beaconZones) {
+        double range = [[zone valueForKey:@"range"] floatValue];
+        if(range == 0) {
+            range = 10.0;
+        }
+
+        NSString *attachmentValue = [zone valueForKey:attachmentKey];
+
+        EPXProximityZone *zone = [[EPXProximityZone alloc]
+                                  initWithRange:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance: range]
+                                  attachmentKey: attachmentKey
+                                  attachmentValue: attachmentValue];
+
+        zone.onEnterAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
+            [self sendEventWithName: @"RNEstimoteEventOnEnter"
+                               body:attachment.payload];
+
+        };
+        zone.onExitAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
+            [self sendEventWithName: @"RNEstimoteEventOnLeave"
+                               body:attachment.payload];
+        };
+        [_zones addObject:zone];
     }
-}
-
-- (NSString *)getEventName {
-    return @"RNEstimoteEvent";
+    self.zones = [[NSArray alloc] init];
+    self.zones = [self.zones arrayByAddingObjectsFromArray:_zones];
+    if(self.proximityObserver != nil) {
+        [self.proximityObserver startObservingZones: self.zones];
+    }
 }
 
 - (NSArray<NSString *> *)supportedEvents {
-    return @[[self getEventName]];
+    return @[@"RNEstimoteEventOnEnter", @"RNEstimoteEventOnLeave"];
 }
-
-- (void)startMonitorDevice {
-    [self.monitoringManager startMonitoringForIdentifiers:self.devices];
-}
-
-- (void)emitBeaconEvent:(NSString *)identifier {
-    [self sendEventWithName:[self getEventName]
-                       body:@{@"beaconCode": identifier}];
-}
-
-#pragma mark > Delegate: Monitoring
-- (void)monitoringManager:(ESTMonitoringV2Manager *)manager didDetermineInitialState:(ESTMonitoringState)state forBeaconWithIdentifier:(NSString *)identifier {
-    // state codes: 0 = unknown, 1 = inside, 2 = outside
-    if (state == 1) {
-        [self emitBeaconEvent:identifier];
-    }
-}
-
-- (void)monitoringManager:(nonnull ESTMonitoringV2Manager *)manager didEnterDesiredRangeOfBeaconWithIdentifier:(nonnull NSString *)identifier {
-    [self emitBeaconEvent:identifier];
-}
-
-- (void)monitoringManager:(nonnull ESTMonitoringV2Manager *)manager
-         didFailWithError:(nonnull NSError *)error {
-    RCTLogWarn(@"Estimote Monitoring Manager failed with error: %@", error);
-}
-
 @end

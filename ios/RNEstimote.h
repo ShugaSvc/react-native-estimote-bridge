@@ -9,13 +9,12 @@
 #import <React/RCTLog.h>
 #endif
 
-#import <EstimoteSDK/EstimoteSDK.h>
+#import <EstimoteProximitySDK/EstimoteProximitySDK.h>
 
-@interface RNEstimote : RCTEventEmitter <RCTBridgeModule, ESTMonitoringV2ManagerDelegate>
+@interface RNEstimote : RCTEventEmitter <RCTBridgeModule>
 
-@property (nonatomic) ESTMonitoringV2Manager *monitoringManager;
-@property (nonatomic) NSArray *devices;
-@property (assign) float detectionDistance;
+@property (nonatomic) EPXProximityObserver *proximityObserver;
+@property (nonatomic) NSArray *zones;
 
 @end
-  
+
