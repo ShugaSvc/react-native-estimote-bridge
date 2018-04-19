@@ -15,8 +15,8 @@ const Estimote = {
     });
     },
 
-    start: function(appId, appToken, beaconZones, attachmentKey) {
-        RNEstimote.start(appId, appToken, beaconZones, attachmentKey);
+    start: function(appId, appToken, detectDistances) {
+        RNEstimote.start(appId, appToken, detectDistances);
     },
 
     stop: function() {

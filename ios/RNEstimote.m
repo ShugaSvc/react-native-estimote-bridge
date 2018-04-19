@@ -15,11 +15,13 @@
 RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(stop) {
-    [self.proximityObserver stopObservingZones];
-    self.proximityObserver = nil;
+    if(self.proximityObserver != nil) {
+        [self.proximityObserver stopObservingZones];
+         self.proximityObserver = nil;
+     }
 }
 
-RCT_EXPORT_METHOD(start:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) beaconZones withAttachmentKey: (NSString *) attachmentKey) {
+RCT_EXPORT_METHOD(start:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances) {
     EPXCloudCredentials *cloudCredentials =
     [[EPXCloudCredentials alloc] initWithAppID:appId
                                       appToken:appToken];
@@ -32,18 +34,15 @@ RCT_EXPORT_METHOD(start:(NSString *)appId withAppToken: (NSString *) appToken wi
 
     NSMutableArray * _zones = [[NSMutableArray alloc] init];
 
-    for (id zone in beaconZones) {
-        double range = [[zone valueForKey:@"range"] floatValue];
+    for (NSString* distance in detectDistances) {
+        double range = [distance doubleValue];
         if(range == 0) {
             range = 10.0;
         }
-
-        NSString *attachmentValue = [zone valueForKey:attachmentKey];
-
         EPXProximityZone *zone = [[EPXProximityZone alloc]
                                   initWithRange:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance: range]
-                                  attachmentKey: attachmentKey
-                                  attachmentValue: attachmentValue];
+                                  attachmentKey: @"range"
+                                  attachmentValue: distance];
 
         zone.onEnterAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
             [self sendEventWithName: @"RNEstimoteEventOnEnter"

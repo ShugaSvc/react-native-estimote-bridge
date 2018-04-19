@@ -18,15 +18,12 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class RNEstimoteModule extends ReactContextBaseJavaModule {
     private static final String EMITTED_ONENTER_EVENT_NAME = "RNEstimoteEventOnEnter"; //If you change this, remember to also change it in index.js
@@ -49,23 +46,11 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
         return map;
     }
 
-    private double getRange(JSONObject jsonObject) {
-        try {
-            return jsonObject.getDouble("range");
-        } catch (Exception ex) {
-            Log.d("app", "getRange() error:" + ex.getStackTrace());
-            return 10.0;
-        }
-    }
-
     @ReactMethod
-    public void start(String appId, String appToken, ReadableArray beaconZones, String attachmentKey) {
-        JSONArray zones = new JSONArray();
-        try {
-            zones = ReactNativeJson.convertArrayToJson(beaconZones);
-        } catch (Exception ex) {
-            Log.d("app", "parsing attachments error: " + ex.getStackTrace());
-        }
+    public void start(String appId, String appToken, ReadableArray detectDistances) {
+        LinkedList<String> distances = new LinkedList<>();
+        ArrayList _distances = detectDistances.toArrayList();
+        distances.addAll(_distances);
 
         Context context = reactContext.getApplicationContext();
         EstimoteCloudCredentials estimoteCloudCredentials = new EstimoteCloudCredentials(appId, appToken);
@@ -82,22 +67,20 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
                         .build();
 
         List<ProximityZone> proximityZones = new ArrayList();
-        for (int i = 0; i < zones.length(); i++) {
-            String attachmentValue;
-            double beaconRange;
-            try {
-                JSONObject zone = zones.getJSONObject(i);
-                attachmentValue = zone.getString(attachmentKey);
-                beaconRange = this.getRange(zone);
+        for (int i = 0; i < distances.size(); i++) {
+            double doubleRange;
+            String stringRange = distances.get(i);
+            try{
+                doubleRange = Double.parseDouble(distances.get(i));
             } catch (Exception ex) {
-                Log.d("app", "parse beacon attachment error: " + ex.getStackTrace());
-                break;
+                doubleRange = 10.0;
+                stringRange = "10";
             }
 
             ProximityZone proximityZone =
                     proximityObserver.zoneBuilder()
-                            .forAttachmentKeyAndValue(attachmentKey, attachmentValue)
-                            .inCustomRange(beaconRange)
+                            .forAttachmentKeyAndValue("range", stringRange)
+                            .inCustomRange(doubleRange)
                             .withOnEnterAction(new Function1<ProximityAttachment, Unit>() {
                                 @Override
                                 public Unit invoke(ProximityAttachment proximityAttachment) {
