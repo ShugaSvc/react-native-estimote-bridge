@@ -3,16 +3,6 @@ import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
 const {RNEstimote} = NativeModules;
 
 const Estimote = {
-    addReceivedBeaconSignalEventListener: function (callback) {
-        new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnReceived', (data) => {
-            let beaconCode = data.beaconCode;
-            if (onReceivedEventQueue.shouldCodeInvokeCallback(beaconCode)) {
-                callback(data);
-            }
-            onReceivedEventQueue.heardCode(beaconCode);
-        });
-    },
-
     addOnEnterEventListener: function (callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnEnter', (data) => {
             let beaconCode = data.uid;
@@ -47,11 +37,7 @@ const Estimote = {
 
     stop: function () {
         RNEstimote.stop();
-    },
-
-    setBeaconDevices: function (beaconDevices) {
-        RNEstimote.setBeaconDevices(beaconDevices);
-    },
+    }
 };
 
 /*
@@ -114,7 +100,6 @@ class CodeHeardQueue {
 }
 
 //Global codeHeardQueue
-export const onReceivedEventQueue = new CodeHeardQueue();
 export const onEnterEventQueue = new CodeHeardQueue();
 export const onLeaveEventQueue = new CodeHeardQueue();
 

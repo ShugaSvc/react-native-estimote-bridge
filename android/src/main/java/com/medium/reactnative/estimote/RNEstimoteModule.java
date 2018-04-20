@@ -34,13 +34,11 @@ import kotlin.jvm.functions.Function1;
 public class RNEstimoteModule extends ReactContextBaseJavaModule {
     private static final String EMITTED_ONENTER_EVENT_NAME = "RNEstimoteEventOnEnter"; //If you change this, remember to also change it in index.js
     private static final String EMITTED_ONLEAVE_EVENT_NAME = "RNEstimoteEventOnLeave"; //If you change this, remember to also change it in index.js
-    private static final String EMITTED_ONRECEIVED_EVENT_NAME = "RNEstimoteEventOnReceived"; //If you change this, remember to also change it in index.js
 
     private final ReactApplicationContext reactContext;
     private ProximityObserver.Handler observationHandler;
     private boolean isUseLegacySDK;
     private BeaconManager beaconManager;
-    private LinkedList<String> allowedBeaconDevices = new LinkedList<>();
     private double detectionDistance = 10.0;
 
     public RNEstimoteModule(ReactApplicationContext reactContext) {
@@ -171,13 +169,11 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
                 RCTNativeAppEventEmitter eventEmitter = reactContext.getJSModule(RCTNativeAppEventEmitter.class);
                 for (EstimoteLocation beacon : beacons) {
                     String beaconId = beacon.id.toHexString();
-                    if (allowedBeaconDevices.indexOf(beaconId) > -1) {
-                        Boolean isWithinDetectionDistance = this.isWithinDetectionDistance(beacon.rssi, beacon.txPower, beaconId);
-                        if (isWithinDetectionDistance) {
-                            WritableMap map = Arguments.createMap();
-                            map.putString("beaconCode", beacon.id.toHexString());
-                            eventEmitter.emit(EMITTED_ONRECEIVED_EVENT_NAME, map);
-                        }
+                    Boolean isWithinDetectionDistance = this.isWithinDetectionDistance(beacon.rssi, beacon.txPower, beaconId);
+                    if (isWithinDetectionDistance) {
+                        WritableMap map = Arguments.createMap();
+                        map.putString("beaconCode", beacon.id.toHexString());
+                        eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, map);
                     }
                 }
             }
@@ -194,13 +190,6 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
             map.putString(entry.getKey(), entry.getValue());
         }
         return map;
-    }
-
-    @ReactMethod
-    public void setBeaconDevices(ReadableArray beacons) {
-        ArrayList allowedBeacons = beacons.toArrayList();
-        allowedBeaconDevices = new LinkedList<>();
-        allowedBeaconDevices.addAll(allowedBeacons);
     }
 
     @ReactMethod
