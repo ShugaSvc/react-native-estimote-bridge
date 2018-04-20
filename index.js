@@ -1,47 +1,55 @@
-import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
+import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
 
-const { RNEstimote } = NativeModules;
+const {RNEstimote} = NativeModules;
 
 const Estimote = {
-    addReceivedBeaconSignalEventListener: function(callback) {
+    addReceivedBeaconSignalEventListener: function (callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnReceived', (data) => {
             let beaconCode = data.beaconCode;
-            if (codeHeardQueue.shouldCodeInvokeCallback(beaconCode)) {
+            if (onReceivedEventQueue.shouldCodeInvokeCallback(beaconCode)) {
                 callback(data);
             }
-            codeHeardQueue.heardCode(beaconCode);
+            onReceivedEventQueue.heardCode(beaconCode);
         });
     },
 
-    addOnEnterEventListener: function(callback) {
+    addOnEnterEventListener: function (callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnEnter', (data) => {
-            callback(data);
+            let beaconCode = data.uid;
+            if (onEnterEventQueue.shouldCodeInvokeCallback(beaconCode)) {
+                callback(data);
+            }
+            onEnterEventQueue.heardCode(beaconCode);
         });
     },
 
-    addOnLeaveEventListener: function(callback) {
+    addOnLeaveEventListener: function (callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnLeave', (data) => {
-            callback(data);
+            let beaconCode = data.uid;
+            if (onLeaveEventQueue.shouldCodeInvokeCallback(beaconCode)) {
+                callback(data);
+            }
+            onLeaveEventQueue.heardCode(beaconCode);
         });
     },
 
-    isUseLegacySDK: function() {
-        if(Platform.OS === "android") {
+    isUseLegacySDK: function () {
+        if (Platform.OS === "android") {
             return RNEstimote.isUseLegacySDK();
         } else {
-            return true;
+            return false;
         }
     },
 
-    start: function(appId, appToken, detectDistances) {
+    start: function (appId, appToken, detectDistances) {
         RNEstimote.start(appId, appToken, detectDistances);
     },
 
-    stop: function() {
+    stop: function () {
         RNEstimote.stop();
     },
 
-    setBeaconDevices: function(beaconDevices) {
+    setBeaconDevices: function (beaconDevices) {
         RNEstimote.setBeaconDevices(beaconDevices);
     },
 };
@@ -57,7 +65,7 @@ class CodeHeardQueue {
     /**
      * @param {int} timeToLive
      */
-    constructor({timeToLive=60000}={}) {
+    constructor({timeToLive = 60000} = {}) {
         this._timeToLive = timeToLive;
         this._queue = new Map();
     }
@@ -101,11 +109,13 @@ class CodeHeardQueue {
      * @param ttl - time to live in ms
      */
     setTimeToLive = (ttl) => {
-    this._timeToLive = ttl;
-}
+        this._timeToLive = ttl;
+    }
 }
 
 //Global codeHeardQueue
-export const codeHeardQueue = new CodeHeardQueue();
+export const onReceivedEventQueue = new CodeHeardQueue();
+export const onEnterEventQueue = new CodeHeardQueue();
+export const onLeaveEventQueue = new CodeHeardQueue();
 
 export default Estimote;
