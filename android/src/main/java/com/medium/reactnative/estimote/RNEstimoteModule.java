@@ -91,19 +91,17 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
 
         List<ProximityZone> proximityZones = new ArrayList();
         for (int i = 0; i < distances.size(); i++) {
-            double doubleRange;
             String stringRange = distances.get(i);
             try{
-                doubleRange = Double.parseDouble(distances.get(i));
+                Double.parseDouble(stringRange);
             } catch (Exception ex) {
-                doubleRange = 10.0;
                 stringRange = "10";
             }
 
             ProximityZone proximityZone =
                     proximityObserver.zoneBuilder()
                             .forAttachmentKeyAndValue("range", stringRange)
-                            .inCustomRange(doubleRange)
+                            .inCustomRange(Double.parseDouble(stringRange))
                             .withOnEnterAction(new Function1<ProximityAttachment, Unit>() {
                                 @Override
                                 public Unit invoke(ProximityAttachment proximityAttachment) {
