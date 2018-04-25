@@ -87,7 +87,11 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
                             }
                         })
                         .withBalancedPowerMode()
+                        .withAnalyticsReportingDisabled()
                         .build();
+
+        //add build option withAnalyticsReportingDisabled to avoid app crash if not network
+        //ref : https://github.com/Estimote/Android-Proximity-SDK/issues/45
 
         List<ProximityZone> proximityZones = new ArrayList();
         for (int i = 0; i < distances.size(); i++) {
