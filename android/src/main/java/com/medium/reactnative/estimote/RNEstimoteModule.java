@@ -2,6 +2,7 @@ package com.medium.reactnative.estimote;
 
 import android.content.Context;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.estimote.coresdk.common.config.EstimoteSDK;
@@ -20,12 +21,16 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import kotlin.Unit;
@@ -106,21 +111,25 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
                     proximityObserver.zoneBuilder()
                             .forAttachmentKeyAndValue("range", stringRange)
                             .inCustomRange(Double.parseDouble(stringRange))
-                            .withOnEnterAction(new Function1<ProximityAttachment, Unit>() {
-                                @Override
-                                public Unit invoke(ProximityAttachment proximityAttachment) {
-                                    WritableMap map = convertToWritableMap(proximityAttachment.getPayload());
-                                    RCTNativeAppEventEmitter eventEmitter = reactContext.getJSModule(RCTNativeAppEventEmitter.class);
-                                    eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, map);
-                                    return null;
-                                }
-                            })
                             .withOnExitAction(new Function1<ProximityAttachment, Unit>() {
                                 @Override
                                 public Unit invoke(ProximityAttachment proximityAttachment) {
-                                    WritableMap map = convertToWritableMap(proximityAttachment.getPayload());
+                                    WritableMap map = MapUtil.toWritableMap(proximityAttachment.getPayload());
                                     RCTNativeAppEventEmitter eventEmitter = reactContext.getJSModule(RCTNativeAppEventEmitter.class);
                                     eventEmitter.emit(EMITTED_ONLEAVE_EVENT_NAME, map);
+                                    return null;
+                                }
+                            })
+                            .withOnChangeAction(new Function1<List<? extends ProximityAttachment>, Unit>() {
+                                @Override
+                                public Unit invoke(List<? extends ProximityAttachment> attachments) {
+                                    WritableArray writableArray = Arguments.createArray();
+                                    for (ProximityAttachment attachment : attachments) {
+                                        WritableMap map = MapUtil.toWritableMap(attachment.getPayload());
+                                        writableArray.pushMap(map);
+                                    }
+                                    RCTNativeAppEventEmitter eventEmitter = reactContext.getJSModule(RCTNativeAppEventEmitter.class);
+                                    eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
                                     return null;
                                 }
                             })
@@ -174,8 +183,10 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
                     Boolean isWithinDetectionDistance = this.isWithinDetectionDistance(beacon.rssi, beacon.txPower, beaconId);
                     if (isWithinDetectionDistance) {
                         WritableMap map = Arguments.createMap();
-                        map.putString("beaconCode", beacon.id.toHexString());
-                        eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, map);
+                        map.putString("uid", beacon.id.toHexString());
+                        WritableArray writableArray = Arguments.createArray();
+                        writableArray.pushMap(map);
+                        eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
                     }
                 }
             }
@@ -184,14 +195,6 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
 
     public void _stopByBeaconManager() {
         beaconManager.stopLocationDiscovery();
-    }
-
-    private WritableMap convertToWritableMap(Map<String, String> payload) {
-        WritableMap map = Arguments.createMap();
-        for (Map.Entry<String, String> entry : payload.entrySet()) {
-            map.putString(entry.getKey(), entry.getValue());
-        }
-        return map;
     }
 
     @ReactMethod

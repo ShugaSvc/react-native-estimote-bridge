@@ -44,14 +44,17 @@ RCT_EXPORT_METHOD(start:(NSString *)appId withAppToken: (NSString *) appToken wi
                                   attachmentKey: @"range"
                                   attachmentValue: distance];
 
-        zone.onEnterAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
-            [self sendEventWithName: @"RNEstimoteEventOnEnter"
-                               body:attachment.payload];
-
-        };
         zone.onExitAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
             [self sendEventWithName: @"RNEstimoteEventOnLeave"
                                body:attachment.payload];
+
+            //RCTLogWarn(@"on leave: %@", attachment.payload);
+        };
+        zone.onChangeAction = ^(NSSet<EPXDeviceAttachment *> * _Nonnull attachmentsCurrentlyInside) {
+            NSArray *_attachment = [[attachmentsCurrentlyInside valueForKey:@"payload"] allObjects];
+            [self sendEventWithName: @"RNEstimoteEventOnEnter"
+                                       body:_attachment];
+            //RCTLogWarn(@"%@ beacon: %@", @(attachmentsCurrentlyInside.count), attachmentsCurrentlyInside);
         };
         [_zones addObject:zone];
     }

@@ -5,11 +5,13 @@ const {RNEstimote} = NativeModules;
 const Estimote = {
     addOnEnterEventListener: function (callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnEnter', (data) => {
-            let beaconCode = data.uid;
-            if (onEnterEventQueue.shouldCodeInvokeCallback(beaconCode)) {
-                callback(data);
+            for(let payload of data) {
+                let beaconCode = payload.uid;
+                if (onEnterEventQueue.shouldCodeInvokeCallback(beaconCode)) {
+                    callback(payload);
+                }
+                onEnterEventQueue.heardCode(beaconCode);
             }
-            onEnterEventQueue.heardCode(beaconCode);
         });
     },
 
