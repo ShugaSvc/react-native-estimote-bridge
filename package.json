@@ -1,6 +1,6 @@
 {
   "name": "react-native-estimote",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "react-native-estimote",
   "main": "index.js",
   "scripts": {

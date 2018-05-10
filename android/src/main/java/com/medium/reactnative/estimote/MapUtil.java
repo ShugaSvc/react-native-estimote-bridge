@@ -1,6 +1,7 @@
 package com.medium.reactnative.estimote;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableMap;
 import java.util.Map;
 
@@ -12,5 +13,11 @@ public class MapUtil {
         }
         return map;
     }
-
+    public static String[] toArray(ReadableArray readableArray) {
+        String[] array = new String [readableArray.size()];
+        for (int i = 0; i < readableArray.size(); i++) {
+            array[i] = readableArray.getString(i);
+        }
+        return array;
+    }
 }

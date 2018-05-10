@@ -33,8 +33,12 @@ const Estimote = {
         }
     },
 
-    start: function (appId, appToken, detectDistances) {
-        RNEstimote.start(appId, appToken, detectDistances);
+    init: function (appId, appToken, detectDistances) {
+        RNEstimote.init(appId, appToken, detectDistances);
+    },
+
+    start: function () {
+        RNEstimote.start();
     },
 
     stop: function () {
