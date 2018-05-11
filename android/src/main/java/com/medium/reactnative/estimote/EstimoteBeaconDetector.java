@@ -54,25 +54,25 @@ public class EstimoteBeaconDetector {
 
     public void init(String appId, String appToken, String[] detectDistances) {
         if (this.isUseLegacySDK) {
-            this._initBeaconManager(appId, appToken);
+            this.initLegacyBeaconManager(appId, appToken);
         } else {
-            this._initProximity(appId, appToken, detectDistances);
+            this.initProximityObserver(appId, appToken, detectDistances);
         }
     }
 
     public void start() {
         if (this.isUseLegacySDK) {
-            this._startByBeaconManager();
+            this.startLegacyBeaconManager();
         } else {
-            this._startByProximity();
+            this.startProximityObserver();
         }
     }
 
     public void stop() {
         if (this.isUseLegacySDK) {
-            this._stopByBeaconManager();
+            this.stopLegacyBeaconManager();
         } else {
-            this._stopByProximity();
+            this.stopProximityObserver();
         }
     }
 
@@ -81,150 +81,158 @@ public class EstimoteBeaconDetector {
     }
 
     public static void startBackendDetect(String appId, String appToken, String[] detectDistances, final Context context) {
-        if(EstimoteBeaconDetector.backgroundObservationHandler != null)
+        if (EstimoteBeaconDetector.backgroundObservationHandler != null)
             return;
 
-
-        EstimoteCloudCredentials estimoteCloudCredentials = new EstimoteCloudCredentials(appId, appToken);
-        EstimoteBeaconDetector.backgroundProximityObserver =
-                new ProximityObserverBuilder(context, estimoteCloudCredentials)
-                        .withOnErrorAction(new Function1<Throwable, Unit>() {
-                            @Override
-                            public Unit invoke(Throwable throwable) {
-                                Log.d("app", "proximity observer error: " + throwable);
-                                return null;
-                            }
-                        })
-                        .withBalancedPowerMode()
-                        .withAnalyticsReportingDisabled()
-                        .withEstimoteSecureMonitoringDisabled()
-                        .withTelemetryReportingDisabled()
-                        .build();
-        //add build option withAnalyticsReportingDisabled to avoid app crash if not network
-        //ref : https://github.com/Estimote/Android-Proximity-SDK/issues/45
-        //add build option withEstimoteSecureMonitoringDisabled / withTelemetryReportingDisabled to avoid init error: Bluetooth Low Energy scan failed with error code: 2
-        //ref: https://github.com/Estimote/Android-Proximity-SDK/issues/48
-
-
-        List<ProximityZone> proximityZones = new ArrayList();
-        for (String stringRange : detectDistances) {
-            ProximityZone proximityZone =
-                    EstimoteBeaconDetector.backgroundProximityObserver.zoneBuilder()
-                            .forAttachmentKeyAndValue("range", stringRange)
-                            .inCustomRange(BACKGROUND_BEACON_DETECT_RANGE)
-                            .withOnEnterAction(new Function1<ProximityAttachment, Unit>() {
-                                @Override
-                                public Unit invoke(ProximityAttachment proximityAttachment) {
-                                    PreferenceHelper preferenceHelper = new PreferenceHelper(context);
-                                    String beaconCode = proximityAttachment.getPayload().get("uid");
-                                    preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONENTER.toString());
-                                    return null;
-                                }
-                            })
-                            .withOnExitAction(new Function1<ProximityAttachment, Unit>() {
-                                @Override
-                                public Unit invoke(ProximityAttachment proximityAttachment) {
-                                    PreferenceHelper preferenceHelper = new PreferenceHelper(context);
-                                    String beaconCode = proximityAttachment.getPayload().get("uid");
-                                    preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONLEAVE.toString());
-                                    return null;
-                                }
-                            })
-                            .withOnChangeAction(new Function1<List<? extends ProximityAttachment>, Unit>() {
-                                @Override
-                                public Unit invoke(List<? extends ProximityAttachment> attachments) {
-                                    PreferenceHelper preferenceHelper = new PreferenceHelper(context);
-                                    for (ProximityAttachment attachment : attachments) {
-                                        String beaconCode = attachment.getPayload().get("uid");
-                                        preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONCHANGE.toString());
-                                    }
-                                    return null;
-                                }
-                            })
-                            .create();
-
-            proximityZones.add(proximityZone);
-        }
+        EstimoteBeaconDetector.backgroundProximityObserver = createProximityObserver(appId, appToken, context);
+        List<ProximityZone> proximityZones = createProximityZones(
+                detectDistances,
+                true,
+                EstimoteBeaconDetector.backgroundProximityObserver,
+                new Function1<ProximityAttachment, Unit>() {
+                    @Override
+                    public Unit invoke(ProximityAttachment proximityAttachment) {
+                        PreferenceHelper preferenceHelper = new PreferenceHelper(context);
+                        String beaconCode = proximityAttachment.getPayload().get("uid");
+                        preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONENTER.toString());
+                        return null;
+                    }
+                },
+                new Function1<ProximityAttachment, Unit>() {
+                    @Override
+                    public Unit invoke(ProximityAttachment proximityAttachment) {
+                        PreferenceHelper preferenceHelper = new PreferenceHelper(context);
+                        String beaconCode = proximityAttachment.getPayload().get("uid");
+                        preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONLEAVE.toString());
+                        return null;
+                    }
+                },
+                new Function1<List<? extends ProximityAttachment>, Unit>() {
+                    @Override
+                    public Unit invoke(List<? extends ProximityAttachment> attachments) {
+                        PreferenceHelper preferenceHelper = new PreferenceHelper(context);
+                        for (ProximityAttachment attachment : attachments) {
+                            String beaconCode = attachment.getPayload().get("uid");
+                            preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONCHANGE.toString());
+                        }
+                        return null;
+                    }
+                });
         EstimoteBeaconDetector.backgroundObservationHandler = EstimoteBeaconDetector.backgroundProximityObserver.addProximityZones(proximityZones).start();
     }
 
-    private void _initProximity(String appId, String appToken, String[] detectDistances) {
+
+    //private methods
+    private void initProximityObserver(String appId, String appToken, String[] detectDistances) {
         final Context context = this.context;
-        EstimoteCloudCredentials estimoteCloudCredentials = new EstimoteCloudCredentials(appId, appToken);
-        EstimoteBeaconDetector.foregroundProximityObserver =
-                new ProximityObserverBuilder(context, estimoteCloudCredentials)
-                        .withOnErrorAction(new Function1<Throwable, Unit>() {
-                            @Override
-                            public Unit invoke(Throwable throwable) {
-                                Log.d("app", "proximity observer error: " + throwable);
-                                return null;
-                            }
-                        })
-                        .withBalancedPowerMode()
-                        .withAnalyticsReportingDisabled()
-                        .withEstimoteSecureMonitoringDisabled()
-                        .withTelemetryReportingDisabled()
-                        .build();
-        //add build option withAnalyticsReportingDisabled to avoid app crash if not network
-        //ref : https://github.com/Estimote/Android-Proximity-SDK/issues/45
-        //add build option withEstimoteSecureMonitoringDisabled / withTelemetryReportingDisabled to avoid init error: Bluetooth Low Energy scan failed with error code: 2
-        //ref: https://github.com/Estimote/Android-Proximity-SDK/issues/48
+        EstimoteBeaconDetector.foregroundProximityObserver = createProximityObserver(appId, appToken, context);
+        List<ProximityZone> proximityZones = createProximityZones(
+                detectDistances,
+                false,
+                EstimoteBeaconDetector.foregroundProximityObserver,
+                new Function1<ProximityAttachment, Unit>() {
+                    @Override
+                    public Unit invoke(ProximityAttachment proximityAttachment) {
+                        // onEnter event, do nothing
+                        return null;
+                    }
+                },
+                new Function1<ProximityAttachment, Unit>() {
+                    @Override
+                    public Unit invoke(ProximityAttachment proximityAttachment) {
+                        WritableMap map = MapUtil.toWritableMap(proximityAttachment.getPayload());
+                        RCTNativeAppEventEmitter eventEmitter = ((ReactContext) context).getJSModule(RCTNativeAppEventEmitter.class);
+                        eventEmitter.emit(EMITTED_ONLEAVE_EVENT_NAME, map);
+                        return null;
+                    }
+                },
+                new Function1<List<? extends ProximityAttachment>, Unit>() {
+                    @Override
+                    public Unit invoke(List<? extends ProximityAttachment> attachments) {
+                        WritableArray writableArray = Arguments.createArray();
+                        for (ProximityAttachment attachment : attachments) {
+                            WritableMap map = MapUtil.toWritableMap(attachment.getPayload());
+                            writableArray.pushMap(map);
+                        }
+                        RCTNativeAppEventEmitter eventEmitter = ((ReactContext) context).getJSModule(RCTNativeAppEventEmitter.class);
+                        eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
+                        return null;
+                    }
+                });
 
-        List<ProximityZone> proximityZones = new ArrayList();
-        for (String stringRange : detectDistances) {
-            try {
-                Double.parseDouble(stringRange);
-            } catch (Exception ex) {
-                stringRange = "10";
-            }
-
-            ProximityZone proximityZone =
-                    EstimoteBeaconDetector.foregroundProximityObserver.zoneBuilder()
-                            .forAttachmentKeyAndValue("range", stringRange)
-                            .inCustomRange(Double.parseDouble(stringRange))
-                            .withOnExitAction(new Function1<ProximityAttachment, Unit>() {
-                                @Override
-                                public Unit invoke(ProximityAttachment proximityAttachment) {
-                                    WritableMap map = MapUtil.toWritableMap(proximityAttachment.getPayload());
-                                    RCTNativeAppEventEmitter eventEmitter = ((ReactContext) context).getJSModule(RCTNativeAppEventEmitter.class);
-                                    eventEmitter.emit(EMITTED_ONLEAVE_EVENT_NAME, map);
-                                    return null;
-                                }
-                            })
-                            .withOnChangeAction(new Function1<List<? extends ProximityAttachment>, Unit>() {
-                                @Override
-                                public Unit invoke(List<? extends ProximityAttachment> attachments) {
-                                    WritableArray writableArray = Arguments.createArray();
-                                    for (ProximityAttachment attachment : attachments) {
-                                        WritableMap map = MapUtil.toWritableMap(attachment.getPayload());
-                                        writableArray.pushMap(map);
-                                    }
-                                    RCTNativeAppEventEmitter eventEmitter = ((ReactContext) context).getJSModule(RCTNativeAppEventEmitter.class);
-                                    eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
-                                    return null;
-                                }
-                            })
-                            .create();
-
-            proximityZones.add(proximityZone);
-        }
         EstimoteBeaconDetector.foregroundObservationHandler = EstimoteBeaconDetector.foregroundProximityObserver.addProximityZones(proximityZones).start();
     }
 
-    private void _startByProximity() {
+    private void startProximityObserver() {
         if (EstimoteBeaconDetector.foregroundObservationHandler == null) {
             EstimoteBeaconDetector.foregroundObservationHandler = EstimoteBeaconDetector.foregroundProximityObserver.start();
         }
     }
 
-    private void _stopByProximity() {
+    private void stopProximityObserver() {
         if (EstimoteBeaconDetector.foregroundObservationHandler != null) {
             EstimoteBeaconDetector.foregroundObservationHandler.stop();
             EstimoteBeaconDetector.foregroundObservationHandler = null;
         }
     }
 
-    private void _initBeaconManager(String appId, String appToken) {
+    private static ProximityObserver createProximityObserver(String appId, String appToken, Context context) {
+        EstimoteCloudCredentials estimoteCloudCredentials = new EstimoteCloudCredentials(appId, appToken);
+        return new ProximityObserverBuilder(context, estimoteCloudCredentials)
+                .withOnErrorAction(new Function1<Throwable, Unit>() {
+                    @Override
+                    public Unit invoke(Throwable throwable) {
+                        Log.d("app", "proximity observer error: " + throwable);
+                        return null;
+                    }
+                })
+                .withBalancedPowerMode()
+                .withAnalyticsReportingDisabled()
+                .withEstimoteSecureMonitoringDisabled()
+                .withTelemetryReportingDisabled()
+                .build();
+
+        //add build option withAnalyticsReportingDisabled to avoid app crash if not network
+        //ref : https://github.com/Estimote/Android-Proximity-SDK/issues/45
+        //add build option withEstimoteSecureMonitoringDisabled / withTelemetryReportingDisabled to avoid init error: Bluetooth Low Energy scan failed with error code: 2
+        //ref: https://github.com/Estimote/Android-Proximity-SDK/issues/48
+    }
+
+    private static List<ProximityZone> createProximityZones(String[] detectDistances,
+                                                            boolean isBackground,
+                                                            ProximityObserver proximityObserver,
+                                                            Function1<ProximityAttachment, Unit> onEnterAction,
+                                                            Function1<ProximityAttachment, Unit> onExitAction,
+                                                            Function1<List<? extends ProximityAttachment>, Unit> onChangeAction) {
+        double customRange;
+
+        List<ProximityZone> proximityZones = new ArrayList();
+        for (String stringRange : detectDistances) {
+            if (isBackground) {
+                customRange = BACKGROUND_BEACON_DETECT_RANGE;
+            } else {
+                try {
+                    customRange = Double.parseDouble(stringRange);
+                } catch (Exception ex) {
+                    customRange = 10.0;
+                }
+            }
+            ProximityZone proximityZone =
+                    proximityObserver.zoneBuilder()
+                            .forAttachmentKeyAndValue("range", stringRange)
+                            .inCustomRange(customRange)
+                            .withOnEnterAction(onEnterAction)
+                            .withOnExitAction(onExitAction)
+                            .withOnChangeAction(onChangeAction)
+                            .create();
+
+            proximityZones.add(proximityZone);
+        }
+        return proximityZones;
+    }
+
+    //Legacy SDK methods
+    private void initLegacyBeaconManager(String appId, String appToken) {
         final Context context = this.context.getApplicationContext();
 
         EstimoteSDK.initialize(context, appId, appToken);
@@ -269,11 +277,11 @@ public class EstimoteBeaconDetector {
         }.setDetectionDistance(this.detectionDistance));
     }
 
-    private void _startByBeaconManager() {
+    private void startLegacyBeaconManager() {
         this.beaconManager.startLocationDiscovery();
     }
 
-    private void _stopByBeaconManager() {
+    private void stopLegacyBeaconManager() {
         this.beaconManager.stopLocationDiscovery();
     }
 

@@ -16,6 +16,7 @@
 @property (nonatomic) EPXProximityObserver *proximityObserver;
 @property (nonatomic) NSArray *zones;
 
-+ (void)initBackendDetect:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances;
++ (EPXProximityObserver *)createProximityObserver: (NSString *) appId withAppToken: (NSString *) appToken;
++ (void)initBackendDetect: (NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances;
 @end
 

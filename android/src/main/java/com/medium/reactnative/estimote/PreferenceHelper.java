@@ -2,6 +2,12 @@ package com.medium.reactnative.estimote;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.util.Log;
+
+import com.estimote.coresdk.repackaged.gson_v2_3_1.com.google.gson.Gson;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -31,9 +37,10 @@ public class PreferenceHelper {
     }
 
     private void saveToPreference(BeaconData data) {
+        Gson gson = new Gson();
         SharedPreferences.Editor editor = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
         String key = LOG_PREFIX + "-" + data.eventTime + "-" + data.beaconCode + "-" + data.eventType;
-        String value = data.platform;
+        String value = gson.toJson(data);
         editor.putString(key, value);
         editor.commit();
     }

@@ -31,18 +31,9 @@ RCT_EXPORT_METHOD(stop) {
 }
 
 - (void)_init:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances{
-    EPXCloudCredentials *cloudCredentials =
-    [[EPXCloudCredentials alloc] initWithAppID:appId
-                                      appToken:appToken];
-
-    self.proximityObserver = [[EPXProximityObserver alloc]
-                              initWithCredentials:cloudCredentials
-                              errorBlock:^(NSError * _Nonnull error) {
-                                  RCTLogWarn(@"proximity observer error = %@", error);
-                              }];
+    self.proximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
 
     NSMutableArray * _zones = [[NSMutableArray alloc] init];
-
     for (NSString* distance in detectDistances) {
         double range = [distance doubleValue];
         if(range == 0) {
@@ -74,8 +65,6 @@ RCT_EXPORT_METHOD(stop) {
     }
 }
 
-
-
 - (void)_start {
     if(self.proximityObserver != nil) {
         [self.proximityObserver startObservingZones: self.zones];
@@ -97,15 +86,7 @@ RCT_EXPORT_METHOD(stop) {
     if(backgroundProximityObserver != nil)
         return;
 
-    EPXCloudCredentials *cloudCredentials =
-    [[EPXCloudCredentials alloc] initWithAppID:appId
-                                      appToken:appToken];
-
-    backgroundProximityObserver = [[EPXProximityObserver alloc]
-                                   initWithCredentials:cloudCredentials
-                                   errorBlock:^(NSError * _Nonnull error) {
-                                       NSLog(@"proximity observer error = %@" ,error);
-                                   }];
+    backgroundProximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
 
     NSMutableArray * _zones = [[NSMutableArray alloc] init];
 
@@ -141,12 +122,37 @@ RCT_EXPORT_METHOD(stop) {
 }
 
 + (void)setBeaconData:(NSString *)beaconCode withEventType: (NSString *) eventType {
-    NSTimeInterval timeStamp = [[NSDate date] timeIntervalSince1970];  // NSTimeInterval is defined as double
-    NSNumber *eventTime = [NSNumber numberWithInteger: timeStamp];
+    NSTimeInterval t = [[NSDate date] timeIntervalSince1970];
+    long long time = t * 1000;
+    NSString* eventTime = [NSString stringWithFormat:@"%lld", time];
     NSString* platform = @"ios";
+
     NSString* key = [NSString stringWithFormat:@"beaconlog-%@-%@-%@",eventTime,beaconCode,eventType];
-    NSString* value = [NSString stringWithFormat:@"%@",platform];
+    NSString* value = @"";
+
+    NSDictionary *dict = @{@"beaconCode": beaconCode,
+                           @"platform": platform,
+                           @"eventType": eventType,
+                           @"eventTime": eventTime};
+    NSError *error;
+    if ([NSJSONSerialization isValidJSONObject:dict]) {
+        // Serialize the dictionary
+        NSData* json = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
+        // If no errors, let's view the JSON
+        if (json != nil && error == nil) {
+            value = [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding];
+        }
+    }
     [[NSUserDefaults standardUserDefaults] setValue:value forKey:key];
 }
 
++ (EPXProximityObserver *)createProximityObserver: (NSString *) appId withAppToken: (NSString *) appToken {
+    EPXCloudCredentials *cloudCredentials =[[EPXCloudCredentials alloc] initWithAppID:appId appToken:appToken];
+    EPXProximityObserver *oberserver = [[EPXProximityObserver alloc]
+                                   initWithCredentials:cloudCredentials
+                                   errorBlock:^(NSError * _Nonnull error) {
+                                       NSLog(@"proximity observer error = %@" ,error);
+                                   }];
+    return oberserver;
+}
 @end
