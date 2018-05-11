@@ -94,7 +94,8 @@ public class EstimoteBeaconDetector {
                     public Unit invoke(ProximityAttachment proximityAttachment) {
                         PreferenceHelper preferenceHelper = new PreferenceHelper(context);
                         String beaconCode = proximityAttachment.getPayload().get("uid");
-                        preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONENTER.toString());
+                        String[] beaconCodes = {beaconCode};
+                        preferenceHelper.setBeaconData(beaconCodes, BeaconEventTypeEnum.ONENTER.toString());
                         return null;
                     }
                 },
@@ -103,7 +104,8 @@ public class EstimoteBeaconDetector {
                     public Unit invoke(ProximityAttachment proximityAttachment) {
                         PreferenceHelper preferenceHelper = new PreferenceHelper(context);
                         String beaconCode = proximityAttachment.getPayload().get("uid");
-                        preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONLEAVE.toString());
+                        String[] beaconCodes = {beaconCode};
+                        preferenceHelper.setBeaconData(beaconCodes, BeaconEventTypeEnum.ONLEAVE.toString());
                         return null;
                     }
                 },
@@ -111,10 +113,12 @@ public class EstimoteBeaconDetector {
                     @Override
                     public Unit invoke(List<? extends ProximityAttachment> attachments) {
                         PreferenceHelper preferenceHelper = new PreferenceHelper(context);
+                        List<String> beaconCodes = new ArrayList<String>();
                         for (ProximityAttachment attachment : attachments) {
-                            String beaconCode = attachment.getPayload().get("uid");
-                            preferenceHelper.setBeaconData(beaconCode, BeaconEventTypeEnum.ONCHANGE.toString());
+                            beaconCodes.add(attachment.getPayload().get("uid"));
                         }
+                        preferenceHelper.setBeaconData(beaconCodes.toArray(new String[beaconCodes.size()]),
+                                BeaconEventTypeEnum.ONCHANGE.toString());
                         return null;
                     }
                 });

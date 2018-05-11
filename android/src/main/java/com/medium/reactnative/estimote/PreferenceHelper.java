@@ -26,7 +26,7 @@ public class PreferenceHelper {
         return this.pref.getString(key, defaultValue);
     }
 
-    public void setBeaconData(String beaconCode, String eventType) {
+    public void setBeaconData(String[] beaconCode, String eventType) {
         Long eventTime = System.currentTimeMillis();
         BeaconData data = new BeaconData();
         data.beaconCode = beaconCode;
@@ -39,7 +39,7 @@ public class PreferenceHelper {
     private void saveToPreference(BeaconData data) {
         Gson gson = new Gson();
         SharedPreferences.Editor editor = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
-        String key = LOG_PREFIX + "-" + data.eventTime + "-" + data.beaconCode + "-" + data.eventType;
+        String key = LOG_PREFIX + "-" + data.eventTime + "-" + data.eventType;
         String value = gson.toJson(data);
         editor.putString(key, value);
         editor.commit();
