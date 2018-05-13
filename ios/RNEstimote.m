@@ -83,8 +83,12 @@ RCT_EXPORT_METHOD(stop) {
 }
 
 + (void)initBackendDetect:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances {
-    if(backgroundProximityObserver != nil)
+    RCTLogInfo(@"[estimoteBeacon]: into startBackendDetect()");
+    if(backgroundProximityObserver != nil) {
+        RCTLogInfo(@"[estimoteBeacon]: backgroundProximityObserver still alive, return.");
         return;
+    }
+
 
     backgroundProximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
 
@@ -97,16 +101,19 @@ RCT_EXPORT_METHOD(stop) {
                                   attachmentValue: distance];
 
         zone.onEnterAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
+            RCTLogInfo(@"[estimoteBeacon]: backend detector:: OnEnter event be triggered.");
             NSDictionary* payload =attachment.payload;
             NSString* beaconCode = [payload valueForKey:@"uid"];
             [RNEstimote setBeaconData:beaconCode withEventType:@"ONENTER"];
         };
         zone.onExitAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
+            RCTLogInfo(@"[estimoteBeacon]: backend detector:: OnExit event be triggered.");
             NSDictionary* payload =attachment.payload;
             NSString* beaconCode = [payload valueForKey:@"uid"];
             [RNEstimote setBeaconData:beaconCode withEventType:@"ONLEAVE"];
         };
         zone.onChangeAction = ^(NSSet<EPXDeviceAttachment *> * _Nonnull attachmentsCurrentlyInside) {
+            RCTLogInfo(@"[estimoteBeacon]: backend detector:: OnChange event be triggered.");
             NSArray *attachments = [[attachmentsCurrentlyInside valueForKey:@"payload"] allObjects];
             for (id attachment in attachments) {
                 NSDictionary* payload = attachment;

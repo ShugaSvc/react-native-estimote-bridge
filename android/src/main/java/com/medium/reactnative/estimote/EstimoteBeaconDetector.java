@@ -42,6 +42,7 @@ public class EstimoteBeaconDetector {
 
     private BeaconManager beaconManager;
     private double detectionDistance = 10.0;
+    private static String TAG = "estimoteBeacon";
 
     public EstimoteBeaconDetector(Context context) {
         this.context = context;
@@ -81,8 +82,12 @@ public class EstimoteBeaconDetector {
     }
 
     public static void startBackendDetect(String appId, String appToken, String[] detectDistances, final Context context) {
-        if (EstimoteBeaconDetector.backgroundObservationHandler != null)
+        Log.i(TAG, "into startBackendDetect()");
+        if (EstimoteBeaconDetector.backgroundObservationHandler != null) {
+            Log.i(TAG, "EstimoteBeaconDetector.backgroundObservationHandler still alive, return.");
             return;
+        }
+
 
         EstimoteBeaconDetector.backgroundProximityObserver = createProximityObserver(appId, appToken, context);
         List<ProximityZone> proximityZones = createProximityZones(
@@ -92,6 +97,7 @@ public class EstimoteBeaconDetector {
                 new Function1<ProximityAttachment, Unit>() {
                     @Override
                     public Unit invoke(ProximityAttachment proximityAttachment) {
+                        Log.i(TAG, "backend detector:: OnEnter event be triggered.");
                         PreferenceHelper preferenceHelper = new PreferenceHelper(context);
                         String beaconCode = proximityAttachment.getPayload().get("uid");
                         String[] beaconCodes = {beaconCode};
@@ -102,6 +108,7 @@ public class EstimoteBeaconDetector {
                 new Function1<ProximityAttachment, Unit>() {
                     @Override
                     public Unit invoke(ProximityAttachment proximityAttachment) {
+                        Log.i(TAG, "backend detector:: OnExit event be triggered.");
                         PreferenceHelper preferenceHelper = new PreferenceHelper(context);
                         String beaconCode = proximityAttachment.getPayload().get("uid");
                         String[] beaconCodes = {beaconCode};
@@ -112,6 +119,7 @@ public class EstimoteBeaconDetector {
                 new Function1<List<? extends ProximityAttachment>, Unit>() {
                     @Override
                     public Unit invoke(List<? extends ProximityAttachment> attachments) {
+                        Log.i(TAG, "backend detector:: OnChange event be triggered.");
                         PreferenceHelper preferenceHelper = new PreferenceHelper(context);
                         List<String> beaconCodes = new ArrayList<String>();
                         for (ProximityAttachment attachment : attachments) {
@@ -123,6 +131,7 @@ public class EstimoteBeaconDetector {
                     }
                 });
         EstimoteBeaconDetector.backgroundObservationHandler = EstimoteBeaconDetector.backgroundProximityObserver.addProximityZones(proximityZones).start();
+        Log.i(TAG, "EstimoteBeaconDetector.backgroundObservationHandler start listener beacons...");
     }
 
 
@@ -186,7 +195,7 @@ public class EstimoteBeaconDetector {
                 .withOnErrorAction(new Function1<Throwable, Unit>() {
                     @Override
                     public Unit invoke(Throwable throwable) {
-                        Log.d("app", "proximity observer error: " + throwable);
+                        Log.e("app", "proximity observer error: " + throwable);
                         return null;
                     }
                 })
