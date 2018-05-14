@@ -3,7 +3,6 @@
 
 @implementation RNEstimote
 
-static EPXProximityObserver *backgroundProximityObserver = nil;
 const double BACKGROUND_BEACON_DETECT_RANGE = 20;
 
 - (id)init {
@@ -32,7 +31,6 @@ RCT_EXPORT_METHOD(stop) {
 
 - (void)_init:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances{
     self.proximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
-
     NSMutableArray * _zones = [[NSMutableArray alloc] init];
     for (NSString* distance in detectDistances) {
         double range = [distance doubleValue];
@@ -43,6 +41,7 @@ RCT_EXPORT_METHOD(stop) {
                                   initWithRange:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance: range]
                                   attachmentKey: @"range"
                                   attachmentValue: distance];
+
 
         zone.onExitAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
             [self sendEventWithName: @"RNEstimoteEventOnLeave"
@@ -60,40 +59,26 @@ RCT_EXPORT_METHOD(stop) {
     }
     self.zones = [[NSArray alloc] init];
     self.zones = [self.zones arrayByAddingObjectsFromArray:_zones];
-    if(self.proximityObserver != nil) {
-        [self.proximityObserver startObservingZones: self.zones];
-    }
+    [self.proximityObserver startObservingZones: self.zones];
 }
 
 - (void)_start {
-    if(self.proximityObserver != nil) {
-        [self.proximityObserver startObservingZones: self.zones];
-    }
+    [self.proximityObserver startObservingZones: self.zones];
 }
 
 - (void)_stop {
-    if(self.proximityObserver != nil) {
-        [self.proximityObserver stopObservingZones];
-        self.proximityObserver = nil;
-    }
+    [self.proximityObserver stopObservingZones];
 }
 
 - (NSArray<NSString *> *)supportedEvents {
     return @[@"RNEstimoteEventOnEnter", @"RNEstimoteEventOnLeave"];
 }
 
-+ (void)initBackendDetect:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances {
++ (EPXProximityObserver *)initBackendDetect:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances {
     RCTLogInfo(@"[estimoteBeacon]: into startBackendDetect()");
-    if(backgroundProximityObserver != nil) {
-        RCTLogInfo(@"[estimoteBeacon]: backgroundProximityObserver still alive, return.");
-        return;
-    }
-
-
-    backgroundProximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
+    EPXProximityObserver* backgroundProximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
 
     NSMutableArray * _zones = [[NSMutableArray alloc] init];
-
     for (NSString* distance in detectDistances) {
         EPXProximityZone *zone = [[EPXProximityZone alloc]
                                   initWithRange:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance: BACKGROUND_BEACON_DETECT_RANGE]
@@ -126,6 +111,7 @@ RCT_EXPORT_METHOD(stop) {
     NSArray* zones = [[NSArray alloc] init];
     zones = [zones arrayByAddingObjectsFromArray:_zones];
     [backgroundProximityObserver startObservingZones: zones];
+    return backgroundProximityObserver;
 }
 
 + (void)setBeaconData:(NSString *)beaconCode withEventType: (NSString *) eventType {
