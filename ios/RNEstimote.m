@@ -18,19 +18,13 @@ const double BACKGROUND_BEACON_DETECT_RANGE = 20;
 RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(init:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances) {
-    [self _init:appId withAppToken:appToken withBeaconZones:detectDistances];
-}
+    EPXCloudCredentials *cloudCredentials =[[EPXCloudCredentials alloc] initWithAppID:appId appToken:appToken];
+    self.proximityObserver = [[EPXProximityObserver alloc]
+                                        initWithCredentials:cloudCredentials
+                                        errorBlock:^(NSError * _Nonnull error) {
+                                            NSLog(@"proximity observer error = %@" ,error);
+                                        }];
 
-RCT_EXPORT_METHOD(start) {
-    [self _start];
-}
-
-RCT_EXPORT_METHOD(stop) {
-    [self _stop];
-}
-
-- (void)_init:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances{
-    self.proximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
     NSMutableArray * _zones = [[NSMutableArray alloc] init];
     for (NSString* distance in detectDistances) {
         double range = [distance doubleValue];
@@ -62,90 +56,15 @@ RCT_EXPORT_METHOD(stop) {
     [self.proximityObserver startObservingZones: self.zones];
 }
 
-- (void)_start {
+RCT_EXPORT_METHOD(start) {
     [self.proximityObserver startObservingZones: self.zones];
 }
 
-- (void)_stop {
+RCT_EXPORT_METHOD(stop) {
     [self.proximityObserver stopObservingZones];
 }
 
 - (NSArray<NSString *> *)supportedEvents {
     return @[@"RNEstimoteEventOnEnter", @"RNEstimoteEventOnLeave"];
-}
-
-+ (EPXProximityObserver *)initBackendDetect:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances {
-    RCTLogInfo(@"[estimoteBeacon]: into startBackendDetect()");
-    EPXProximityObserver* backgroundProximityObserver = [RNEstimote createProximityObserver:appId withAppToken:appToken];
-
-    NSMutableArray * _zones = [[NSMutableArray alloc] init];
-    for (NSString* distance in detectDistances) {
-        EPXProximityZone *zone = [[EPXProximityZone alloc]
-                                  initWithRange:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance: BACKGROUND_BEACON_DETECT_RANGE]
-                                  attachmentKey: @"range"
-                                  attachmentValue: distance];
-
-        zone.onEnterAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
-            RCTLogInfo(@"[estimoteBeacon]: backend detector:: OnEnter event be triggered.");
-            NSDictionary* payload =attachment.payload;
-            NSString* beaconCode = [payload valueForKey:@"uid"];
-            [RNEstimote setBeaconData:beaconCode withEventType:@"ONENTER"];
-        };
-        zone.onExitAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
-            RCTLogInfo(@"[estimoteBeacon]: backend detector:: OnExit event be triggered.");
-            NSDictionary* payload =attachment.payload;
-            NSString* beaconCode = [payload valueForKey:@"uid"];
-            [RNEstimote setBeaconData:beaconCode withEventType:@"ONLEAVE"];
-        };
-        zone.onChangeAction = ^(NSSet<EPXDeviceAttachment *> * _Nonnull attachmentsCurrentlyInside) {
-            RCTLogInfo(@"[estimoteBeacon]: backend detector:: OnChange event be triggered.");
-            NSArray *attachments = [[attachmentsCurrentlyInside valueForKey:@"payload"] allObjects];
-            for (id attachment in attachments) {
-                NSDictionary* payload = attachment;
-                NSString* beaconCode = [payload valueForKey:@"uid"];
-                [RNEstimote setBeaconData:beaconCode withEventType:@"ONCHANGE"];
-            }
-        };
-        [_zones addObject:zone];
-    }
-    NSArray* zones = [[NSArray alloc] init];
-    zones = [zones arrayByAddingObjectsFromArray:_zones];
-    [backgroundProximityObserver startObservingZones: zones];
-    return backgroundProximityObserver;
-}
-
-+ (void)setBeaconData:(NSString *)beaconCode withEventType: (NSString *) eventType {
-    NSTimeInterval t = [[NSDate date] timeIntervalSince1970];
-    long long time = t * 1000;
-    NSString* eventTime = [NSString stringWithFormat:@"%lld", time];
-    NSString* platform = @"ios";
-
-    NSString* key = [NSString stringWithFormat:@"beaconlog-%@-%@-%@",eventTime,beaconCode,eventType];
-    NSString* value = @"";
-
-    NSDictionary *dict = @{@"beaconCode": beaconCode,
-                           @"platform": platform,
-                           @"eventType": eventType,
-                           @"eventTime": eventTime};
-    NSError *error;
-    if ([NSJSONSerialization isValidJSONObject:dict]) {
-        // Serialize the dictionary
-        NSData* json = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
-        // If no errors, let's view the JSON
-        if (json != nil && error == nil) {
-            value = [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding];
-        }
-    }
-    [[NSUserDefaults standardUserDefaults] setValue:value forKey:key];
-}
-
-+ (EPXProximityObserver *)createProximityObserver: (NSString *) appId withAppToken: (NSString *) appToken {
-    EPXCloudCredentials *cloudCredentials =[[EPXCloudCredentials alloc] initWithAppID:appId appToken:appToken];
-    EPXProximityObserver *oberserver = [[EPXProximityObserver alloc]
-                                   initWithCredentials:cloudCredentials
-                                   errorBlock:^(NSError * _Nonnull error) {
-                                       NSLog(@"proximity observer error = %@" ,error);
-                                   }];
-    return oberserver;
 }
 @end
