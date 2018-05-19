@@ -13,6 +13,7 @@ import com.estimote.proximity_sdk.proximity.ProximityObserver;
 import com.estimote.proximity_sdk.proximity.ProximityObserverBuilder;
 import com.estimote.proximity_sdk.proximity.ProximityZone;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableArray;
@@ -89,7 +90,6 @@ public class EstimoteBeaconDetector {
             return;
         }
 
-
         EstimoteBeaconDetector.backgroundProximityObserver = createProximityObserver(appId, appToken, context);
         List<ProximityZone> proximityZones = createProximityZones(
                 detectDistances,
@@ -155,8 +155,10 @@ public class EstimoteBeaconDetector {
                     @Override
                     public Unit invoke(ProximityAttachment proximityAttachment) {
                         WritableMap map = MapUtil.toWritableMap(proximityAttachment.getPayload());
-                        RCTNativeAppEventEmitter eventEmitter = ((ReactContext) context).getJSModule(RCTNativeAppEventEmitter.class);
-                        eventEmitter.emit(EMITTED_ONLEAVE_EVENT_NAME, map);
+                        RCTNativeAppEventEmitter eventEmitter = getEventEmitter(context);
+                        if(eventEmitter != null)
+                            eventEmitter.emit(EMITTED_ONLEAVE_EVENT_NAME, map);
+
                         return null;
                     }
                 },
@@ -168,8 +170,10 @@ public class EstimoteBeaconDetector {
                             WritableMap map = MapUtil.toWritableMap(attachment.getPayload());
                             writableArray.pushMap(map);
                         }
-                        RCTNativeAppEventEmitter eventEmitter = ((ReactContext) context).getJSModule(RCTNativeAppEventEmitter.class);
-                        eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
+                        RCTNativeAppEventEmitter eventEmitter = getEventEmitter(context);
+                        if(eventEmitter != null)
+                            eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
+
                         return null;
                     }
                 });
@@ -178,8 +182,8 @@ public class EstimoteBeaconDetector {
     }
 
     private void startProximityObserver() {
-        if (EstimoteBeaconDetector.foregroundObservationHandler == null) {
-            EstimoteBeaconDetector.foregroundObservationHandler = EstimoteBeaconDetector.foregroundProximityObserver.start();
+        if (EstimoteBeaconDetector.foregroundProximityObserver != null) {
+            EstimoteBeaconDetector.foregroundProximityObserver.start();
         }
     }
 
@@ -274,7 +278,7 @@ public class EstimoteBeaconDetector {
 
             @Override
             public void onLocationsFound(List<EstimoteLocation> beacons) {
-                RCTNativeAppEventEmitter eventEmitter = ((ReactContext) context).getJSModule(RCTNativeAppEventEmitter.class);
+                RCTNativeAppEventEmitter eventEmitter = getEventEmitter(context);
                 for (EstimoteLocation beacon : beacons) {
                     String beaconId = beacon.id.toHexString();
                     Boolean isWithinDetectionDistance = this.isWithinDetectionDistance(beacon.rssi, beacon.txPower, beaconId);
@@ -283,7 +287,8 @@ public class EstimoteBeaconDetector {
                         map.putString("uid", beacon.id.toHexString());
                         WritableArray writableArray = Arguments.createArray();
                         writableArray.pushMap(map);
-                        eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
+                        if(eventEmitter != null)
+                            eventEmitter.emit(EMITTED_ONENTER_EVENT_NAME, writableArray);
                     }
                 }
 
@@ -292,11 +297,25 @@ public class EstimoteBeaconDetector {
     }
 
     private void startLegacyBeaconManager() {
-        this.beaconManager.startLocationDiscovery();
+        if(this.beaconManager != null)
+            this.beaconManager.startLocationDiscovery();
     }
 
     private void stopLegacyBeaconManager() {
-        this.beaconManager.stopLocationDiscovery();
+        if(this.beaconManager != null)
+            this.beaconManager.stopLocationDiscovery();
     }
 
+    private RCTNativeAppEventEmitter getEventEmitter(Context context) {
+        RCTNativeAppEventEmitter eventEmitter;
+        if(context instanceof ReactContext) {
+            eventEmitter = ((ReactContext)context).getJSModule(RCTNativeAppEventEmitter.class);
+        } else if(context.getApplicationContext() instanceof ReactApplicationContext) {
+            eventEmitter = ((ReactContext)context.getApplicationContext()).getJSModule(RCTNativeAppEventEmitter.class);
+        } else {
+            eventEmitter = null;
+            Log.e(TAG, "can't get eventEmitter");
+        }
+        return eventEmitter;
+    }
 }
