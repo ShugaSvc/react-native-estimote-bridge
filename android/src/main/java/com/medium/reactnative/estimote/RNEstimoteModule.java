@@ -20,7 +20,7 @@ public class RNEstimoteModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void init(String appId, String appToken, ReadableArray detectDistances) {
-        this.estimoteBeaconDetector.init(appId, appToken, MapUtil.toArray(detectDistances));
+        this.estimoteBeaconDetector.init(appId, appToken, detectDistances);
     }
 
     @ReactMethod

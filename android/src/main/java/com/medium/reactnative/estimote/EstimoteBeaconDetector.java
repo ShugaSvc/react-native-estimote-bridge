@@ -14,6 +14,7 @@ import com.estimote.proximity_sdk.proximity.ProximityObserverBuilder;
 import com.estimote.proximity_sdk.proximity.ProximityZone;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
@@ -53,11 +54,11 @@ public class EstimoteBeaconDetector {
         return this.isUseLegacySDK;
     }
 
-    public void init(String appId, String appToken, String[] detectDistances) {
+    public void init(String appId, String appToken, ReadableArray detectDistances) {
         if (this.isUseLegacySDK) {
             this.initLegacyBeaconManager(appId, appToken);
         } else {
-            this.initProximityObserver(appId, appToken, detectDistances);
+            this.initProximityObserver(appId, appToken, MapUtil.toArray(detectDistances));
         }
     }
 
@@ -246,7 +247,7 @@ public class EstimoteBeaconDetector {
 
     //Legacy SDK methods
     private void initLegacyBeaconManager(String appId, String appToken) {
-        final Context context = this.context.getApplicationContext();
+        final Context context = this.context;
 
         EstimoteSDK.initialize(context, appId, appToken);
         this.beaconManager = new BeaconManager(context);
