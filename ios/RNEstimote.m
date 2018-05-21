@@ -64,6 +64,18 @@ RCT_EXPORT_METHOD(stop) {
     [self.proximityObserver stopObservingZones];
 }
 
+RCT_REMAP_METHOD(isSupportIOSProximityEstimoteSDK,
+                 resolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+    if ([[NSTimer class] respondsToSelector:@selector(scheduledTimerWithTimeInterval:repeats:block:)]) {
+        resolve([NSNumber numberWithBool:YES]);
+    } else {
+        resolve([NSNumber numberWithBool:NO]);
+    }
+}
+
+
 - (NSArray<NSString *> *)supportedEvents {
     return @[@"RNEstimoteEventOnEnter", @"RNEstimoteEventOnLeave"];
 }

@@ -43,6 +43,12 @@ const Estimote = {
 
     stop: function () {
         RNEstimote.stop();
+    },
+
+    isSupportIOSProximityEstimoteSDK: function () {
+        if (Platform.OS === "ios") {
+            return RNEstimote.isSupportIOSProximityEstimoteSDK();
+        }
     }
 };
 
