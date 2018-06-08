@@ -1,10 +1,29 @@
-import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
+import {AppState, NativeEventEmitter, NativeModules, Platform} from 'react-native';
 
 const {RNEstimote} = NativeModules;
+
+let isAppInForeground = true;
+let currentAppState = "";
+
+/* only iOS issue, when start 2 estimote proximity observer (foreground & backend),
+*  even foreground observer called stop() , the listener call back still be invoked.
+*  so we check the app state here, only app is foreground allow invoke the beacon received event.
+*/
+let handleAppStateChange = (nextAppState) => {
+    if (currentAppState.match(/inactive|background/) && nextAppState === 'active')
+        isAppInForeground = true;
+    else
+        isAppInForeground = false;
+
+    currentAppState = nextAppState;
+}
 
 const Estimote = {
     addOnEnterEventListener: function (callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnEnter', (data) => {
+            if(!isAppInForeground)
+                return;
+
             for(let payload of data) {
                 let beaconCode = payload.uid;
                 if (onEnterEventQueue.shouldCodeInvokeCallback(beaconCode)) {
@@ -13,10 +32,14 @@ const Estimote = {
                 onEnterEventQueue.heardCode(beaconCode);
             }
         });
+
     },
 
     addOnLeaveEventListener: function (callback) {
         new NativeEventEmitter(RNEstimote).addListener('RNEstimoteEventOnLeave', (data) => {
+            if(!isAppInForeground)
+                return;
+
             let beaconCode = data.uid;
             if (onLeaveEventQueue.shouldCodeInvokeCallback(beaconCode)) {
                 callback(data);
@@ -35,6 +58,8 @@ const Estimote = {
 
     init: function (appId, appToken, detectDistances) {
         RNEstimote.init(appId, appToken, detectDistances);
+        currentAppState = AppState.currentState;
+        AppState.addEventListener('change', handleAppStateChange);
     },
 
     start: function () {
@@ -49,7 +74,7 @@ const Estimote = {
         if (Platform.OS === "ios") {
             return RNEstimote.isSupportIOSProximityEstimoteSDK();
         }
-    }
+    },
 };
 
 /*
@@ -110,6 +135,7 @@ class CodeHeardQueue {
         this._timeToLive = ttl;
     }
 }
+
 
 //Global codeHeardQueue
 export const onEnterEventQueue = new CodeHeardQueue();
