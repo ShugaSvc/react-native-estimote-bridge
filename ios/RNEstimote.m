@@ -33,7 +33,7 @@ RCT_EXPORT_METHOD(init:(NSString *)appId withAppToken: (NSString *) appToken wit
         }
         EPXProximityZone *zone = [[EPXProximityZone alloc]
                                   initWithRange:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance: range]
-                                  attachmentKey: @"range"
+                                  attachmentKey: @"range_ios"
                                   attachmentValue: distance];
 
 
