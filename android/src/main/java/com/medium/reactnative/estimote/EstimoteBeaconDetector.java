@@ -233,7 +233,7 @@ public class EstimoteBeaconDetector {
             }
             ProximityZone proximityZone =
                     proximityObserver.zoneBuilder()
-                            .forAttachmentKeyAndValue("range", stringRange)
+                            .forAttachmentKeyAndValue("range_android", stringRange)
                             .inCustomRange(customRange)
                             .withOnEnterAction(onEnterAction)
                             .withOnExitAction(onExitAction)
