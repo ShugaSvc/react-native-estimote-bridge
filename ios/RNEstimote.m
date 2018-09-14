@@ -5,6 +5,7 @@
 
 const double BACKGROUND_BEACON_DETECT_RANGE = 20;
 
+
 - (id)init {
     self = [super init];
     return self;
@@ -15,39 +16,43 @@ const double BACKGROUND_BEACON_DETECT_RANGE = 20;
     return dispatch_get_main_queue();
 }
 
+NSDictionary * contextToJSON(EPXProximityZoneContext *context) {
+    return @{@"tag": context.tag,
+             @"uid": context.deviceIdentifier};
+}
+
 RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(init:(NSString *)appId withAppToken: (NSString *) appToken withBeaconZones:(NSArray *) detectDistances) {
     EPXCloudCredentials *cloudCredentials =[[EPXCloudCredentials alloc] initWithAppID:appId appToken:appToken];
     self.proximityObserver = [[EPXProximityObserver alloc]
                                         initWithCredentials:cloudCredentials
-                                        errorBlock:^(NSError * _Nonnull error) {
+                                        onError:^(NSError * _Nonnull error) {
                                             NSLog(@"proximity observer error = %@" ,error);
                                         }];
-
     NSMutableArray * _zones = [[NSMutableArray alloc] init];
     for (NSString* distance in detectDistances) {
+        __weak __typeof(self) weakSelf = self;
         double range = [distance doubleValue];
         if(range == 0) {
             range = 10.0;
         }
         EPXProximityZone *zone = [[EPXProximityZone alloc]
-                                  initWithRange:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance: range]
-                                  attachmentKey: @"range_ios"
-                                  attachmentValue: distance];
+                                  initWithTag:[NSString stringWithFormat:@"range_ios_%@", distance]
+                                  range:[EPXProximityRange customRangeWithDesiredMeanTriggerDistance:range]];
 
-
-        zone.onExitAction = ^(EPXDeviceAttachment * _Nonnull attachment) {
-            [self sendEventWithName: @"RNEstimoteEventOnLeave"
-                               body:attachment.payload];
-
-            RCTLogWarn(@"on leave: %@", attachment.payload);
+        zone.onExit = ^(EPXProximityZoneContext *context) {
+            [weakSelf sendEventWithName: @"RNEstimoteEventOnLeave" body:contextToJSON(context)];
+            RCTLogWarn(@"on leave: %@", contextToJSON(context));
         };
-        zone.onChangeAction = ^(NSSet<EPXDeviceAttachment *> * _Nonnull attachmentsCurrentlyInside) {
-            NSArray *_attachment = [[attachmentsCurrentlyInside valueForKey:@"payload"] allObjects];
-            [self sendEventWithName: @"RNEstimoteEventOnEnter"
-                               body:_attachment];
-            RCTLogWarn(@"%@ beacon: %@", @(attachmentsCurrentlyInside.count), attachmentsCurrentlyInside);
+
+        zone.onContextChange = ^(NSSet<EPXProximityZoneContext *> *contexts) {
+            NSMutableArray *convertedContexts = [NSMutableArray arrayWithCapacity:contexts.count];
+            for (EPXProximityZoneContext *context in contexts) {
+                [convertedContexts addObject:contextToJSON(context)];
+            }
+            [weakSelf sendEventWithName:@"RNEstimoteEventOnEnter" body:convertedContexts];
+            RCTLogWarn(@"%@ beacon: %@", @(contexts.count), convertedContexts);
         };
         [_zones addObject:zone];
     }
@@ -74,7 +79,6 @@ RCT_REMAP_METHOD(isSupportIOSProximityEstimoteSDK,
         resolve([NSNumber numberWithBool:NO]);
     }
 }
-
 
 - (NSArray<NSString *> *)supportedEvents {
     return @[@"RNEstimoteEventOnEnter", @"RNEstimoteEventOnLeave"];

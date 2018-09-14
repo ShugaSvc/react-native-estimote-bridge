@@ -2,10 +2,7 @@ package com.medium.reactnative.estimote;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.util.Log;
+
 
 import com.estimote.coresdk.repackaged.gson_v2_3_1.com.google.gson.Gson;
 
