@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1EF6DB91214BB06A00A05083 /* EstimoteBluetoothScanning.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EF6DB90214BB06A00A05083 /* EstimoteBluetoothScanning.framework */; };
-		1EF6DB93214BB07D00A05083 /* EstimoteProximitySDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EF6DB92214BB07D00A05083 /* EstimoteProximitySDK.framework */; };
+		1EFF586E21ABDDA9006584DC /* EstimoteBluetoothScanning.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EFF586D21ABDDA9006584DC /* EstimoteBluetoothScanning.framework */; };
+		1EFF587021ABDDB1006584DC /* EstimoteProximitySDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EFF586F21ABDDB1006584DC /* EstimoteProximitySDK.framework */; };
 		B3E7B58A1CC2AC0600A0062D /* RNEstimote.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E7B5891CC2AC0600A0062D /* RNEstimote.m */; };
 /* End PBXBuildFile section */
 
@@ -26,8 +26,8 @@
 
 /* Begin PBXFileReference section */
 		134814201AA4EA6300B7C361 /* libRNEstimote.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNEstimote.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		1EF6DB90214BB06A00A05083 /* EstimoteBluetoothScanning.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = EstimoteBluetoothScanning.framework; sourceTree = "<group>"; };
-		1EF6DB92214BB07D00A05083 /* EstimoteProximitySDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = EstimoteProximitySDK.framework; sourceTree = "<group>"; };
+		1EFF586D21ABDDA9006584DC /* EstimoteBluetoothScanning.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = EstimoteBluetoothScanning.framework; sourceTree = "<group>"; };
+		1EFF586F21ABDDB1006584DC /* EstimoteProximitySDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = EstimoteProximitySDK.framework; sourceTree = "<group>"; };
 		B3E7B5881CC2AC0600A0062D /* RNEstimote.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNEstimote.h; sourceTree = "<group>"; };
 		B3E7B5891CC2AC0600A0062D /* RNEstimote.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNEstimote.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -37,8 +37,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1EF6DB91214BB06A00A05083 /* EstimoteBluetoothScanning.framework in Frameworks */,
-				1EF6DB93214BB07D00A05083 /* EstimoteProximitySDK.framework in Frameworks */,
+				1EFF586E21ABDDA9006584DC /* EstimoteBluetoothScanning.framework in Frameworks */,
+				1EFF587021ABDDB1006584DC /* EstimoteProximitySDK.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,8 +66,8 @@
 		AAEAC0581FA7115A008B0B6F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				1EF6DB92214BB07D00A05083 /* EstimoteProximitySDK.framework */,
-				1EF6DB90214BB06A00A05083 /* EstimoteBluetoothScanning.framework */,
+				1EFF586F21ABDDB1006584DC /* EstimoteProximitySDK.framework */,
+				1EFF586D21ABDDA9006584DC /* EstimoteBluetoothScanning.framework */,
 			);
 			path = Frameworks;
 			sourceTree = "<group>";
