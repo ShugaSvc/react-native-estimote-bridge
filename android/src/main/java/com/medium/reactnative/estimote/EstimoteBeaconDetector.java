@@ -20,10 +20,15 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
+import java.io.IOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import io.reactivex.exceptions.UndeliverableException;
+import io.reactivex.functions.Consumer;
+import io.reactivex.plugins.RxJavaPlugins;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
 
@@ -153,6 +158,15 @@ public class EstimoteBeaconDetector {
     //private methods
     private void initProximityObserver(String appId, String appToken, String[] detectDistances) {
         final Context context = this.context;
+
+        //fix BLE bg detect crash, ref:https://github.com/Estimote/Android-Proximity-SDK/issues/48#issuecomment-446912664
+        RxJavaPlugins.setErrorHandler(new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable e) {
+                e.printStackTrace();
+            }
+        });
+
         EstimoteBeaconDetector.foregroundProximityObserver = createProximityObserver(appId, appToken, context);
         if (EstimoteBeaconDetector.foregroundObservationHandler == null) {
              this.proximityZones = createProximityZones(
@@ -189,6 +203,7 @@ public class EstimoteBeaconDetector {
                     });
             EstimoteBeaconDetector.foregroundObservationHandler = EstimoteBeaconDetector.foregroundProximityObserver.startObserving(proximityZones);
         }
+
     }
 
 
